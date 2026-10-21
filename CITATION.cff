@@ -1,0 +1,8 @@
+cff-version: 1.2.0
+message: "If you use AnatoMesh, please cite it as below. TODO: owners, add authors (and DOI after a Zenodo release) before publishing."
+title: "AnatoMesh (browser edition)"
+type: software
+version: 0.1.0
+repository-code: "https://github.com/memar-lab/AnatoMesh"
+authors:
+  - name: "Memar Lab"

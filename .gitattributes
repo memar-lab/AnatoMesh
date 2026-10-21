@@ -1,0 +1,2 @@
+# store every file byte for byte: the engine files in py/ must stay identical to the desktop ones (some use CRLF)
+* -text
