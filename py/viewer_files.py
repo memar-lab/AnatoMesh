@@ -227,7 +227,7 @@ def write_result(job_dir: Path, atlas: str) -> dict:
     edge_map = np.zeros(shape, np.float32)
     cell_mm3 = float(np.prod(spacing))
     sj_all, vol_all, edge_all, diag_all = [], [], [], []
-    per_part, after_q, after_c, after_o, before_quads = [], [], [], [], []
+    per_part, after_q, after_c, after_o, before_quads, before_src = [], [], [], [], [], []
     snapped = points.copy()
     for name, hexes in hex_parts.items():
         coords = points[hexes]
@@ -249,7 +249,7 @@ def write_result(job_dir: Path, atlas: str) -> dict:
         snapped[hexes.ravel()] = (snapped_idx.reshape(-1, 3) @ A[:3, :3].T + A[:3, 3])
         quads, owner = _boundary_faces(hexes)
         after_q.append(quads); after_o.append(np.nan_to_num(jac[owner], nan=0.0)); after_c.append(np.full(len(quads), code))
-        before_quads.append(quads)
+        before_quads.append(quads); before_src.append((hexes, owner))
         per_part.append(part_row(name, code, "solid", jac))
     for name, quads in quad_parts.items():
         jac = scorecard._in_chunks(scorecard._shell_metrics, points[quads])["sj"]
@@ -257,6 +257,9 @@ def write_result(job_dir: Path, atlas: str) -> dict:
         after_q.append(quads); after_o.append(np.nan_to_num(jac, nan=0.0)); after_c.append(np.full(len(quads), code_of[name]))
         per_part.append(part_row(name, code_of[name], "shell", jac))
 
+    # the voxel mesh's own scaled Jacobian, from the unsmoothed corners once every part is snapped
+    before_o = [np.nan_to_num(scorecard._in_chunks(scorecard._solid_metrics, snapped[hexes])["sj"][owner], nan=0.0)
+                for hexes, owner in before_src]
     used = np.unique(np.concatenate([q.ravel() for q in after_q]))
     remap = np.full(len(points), -1, np.int64)
     remap[used] = np.arange(len(used))
@@ -265,7 +268,7 @@ def write_result(job_dir: Path, atlas: str) -> dict:
                    np.concatenate(after_c), np.concatenate(after_o))
     n_solid = sum(len(q) for q in before_quads)
     _write_surface(out_dir / "surface_before.bin", view(to_idx(snapped[used])), after_quads[:n_solid],
-                   np.concatenate(after_c)[:n_solid], np.concatenate(after_o)[:n_solid])
+                   np.concatenate(after_c)[:n_solid], np.concatenate(before_o))
 
     nib.save(nib.Nifti1Image(labels, A), str(out_dir / "parts.nii.gz"))
     nib.save(nib.Nifti1Image(quality, A), str(out_dir / "quality.nii.gz"))

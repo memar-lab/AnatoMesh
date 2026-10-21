@@ -1,5 +1,13 @@
 {
  "files": [
+  "anatoreg/__init__.py",
+  "anatoreg/image.py",
+  "anatoreg/linear.py",
+  "anatoreg/metric.py",
+  "anatoreg/n4.py",
+  "anatoreg/registration.py",
+  "anatoreg/syn.py",
+  "anatoreg/transform.py",
   "atlas_data.py",
   "counts.py",
   "engine/__init__.py",

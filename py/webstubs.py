@@ -2,9 +2,10 @@
 
 What a browser does not have, and what this file does about it:
 
-* ants, SimpleITK, dipy          compiled registration / diffusion libraries that Pyodide does not ship. The engine imports them at the top
-                                 of some files even when the job never calls them, so they become STUBS: the import works, and any
-                                 use raises UnavailableInBrowser with a plain message (raw-MRI segmentation and diffusion need them).
+* ants                            antspyx does not run in Pyodide, so `ants` is routed to anatoreg (py/anatoreg, numpy/scipy) for the subset the engine uses.
+* SimpleITK, dipy                compiled libraries that Pyodide does not ship. The engine imports them at the top of some files even when
+                                 the job never calls them, so they become STUBS: the import works, and any
+                                 use raises UnavailableInBrowser with a plain message (diffusion needs dipy).
 * numba, edt, rtree, ...         make `import` fail, which the engine already handles (numba kernels have NumPy twins; `edt` is optional).
 * ThreadPoolExecutor             a browser tab's Python cannot start threads, so it becomes a plain loop with the same interface.
 * psutil, flask, pymeshlab       not needed by a job; blocked so that nothing half-works.
@@ -23,7 +24,7 @@ import os
 import sys
 import types
 
-STUBS = ("ants", "SimpleITK", "dipy")
+STUBS = ("SimpleITK", "dipy")
 BLOCKED = ("numba", "edt", "rtree", "mapbox_earcut", "fast_simplification", "pymeshlab", "psutil", "flask", "werkzeug")
 
 MESSAGE = ("{name} is not available in the browser edition. Raw MRI segmentation, registration-based atlases "
@@ -101,6 +102,8 @@ def install(threads_available: bool = False) -> None:
     # the deck writer has a reference Python formatter (byte-identical to the numba fast path, see lsdyna_writer.py / fastfmt.py)
     os.environ.setdefault("ANATOMESH_PY_FORMAT", "1")
     sys.meta_path.insert(0, _StubFinder())
+    import anatoreg                              # the ants API, in numpy/scipy; the engine's `import ants` gets this module
+    sys.modules["ants"] = anatoreg
     for name in BLOCKED:
         sys.modules[name] = None                  # `import name` -> ImportError
     if not threads_available:

@@ -1,6 +1,8 @@
 """Builds the website folder from the desktop AnatoMesh folder.
 
-    python tools/build_site.py <AnatoMesh desktop folder>        e.g. .../Updated_OCT20/AnatoMesh
+    python tools/build_site.py <AnatoMesh desktop folder> [--interface-only]   e.g. .../Updated_OCT20/AnatoMesh
+
+--interface-only copies and edits the interface and leaves py/ as it is.
 
 * the built interface (app/dist) is copied to the site root; index.html gets one extra <script> (web/shim.js), and the bundle gets TWO
   one-constant edits for the browser edition (BROWSER_EDITS below: the element-size slider reaches 6 mm instead of 2 mm, and the
@@ -27,11 +29,8 @@ BROWSER_EDITS = [
 OWN_PY = ["webstubs.py", "webapi.py"]                                    # written for the browser edition, kept in py/
 
 
-def main(desktop: Path) -> None:
-    dist, backend = desktop / "app" / "dist", desktop / "backend"
-    if not (dist / "index.html").exists() or not (backend / "engine").is_dir():
-        sys.exit(f"{desktop} is not an AnatoMesh folder (needs app/dist and backend/engine)")
-    # interface
+def build_interface(dist: Path) -> None:
+    """Copy the built interface to the site root and apply the browser edition's edits."""
     for item in dist.iterdir():
         target = SITE / item.name
         if item.name == "index.html":
@@ -50,6 +49,16 @@ def main(desktop: Path) -> None:
     if "web/shim.js" not in html:
         html = html.replace("<script type=\"module\"", "<script src=\"./web/shim.js\"></script>\n    <script type=\"module\"", 1)
     (SITE / "index.html").write_text(html, encoding="utf-8")
+
+
+def main(desktop: Path, interface_only: bool = False) -> None:
+    dist, backend = desktop / "app" / "dist", desktop / "backend"
+    if not (dist / "index.html").exists() or not (backend / "engine").is_dir():
+        sys.exit(f"{desktop} is not an AnatoMesh folder (needs app/dist and backend/engine)")
+    build_interface(dist)
+    if interface_only:
+        print(f"interface copied from {dist}")
+        return
     # engine, unchanged
     py = SITE / "py"
     py.mkdir(exist_ok=True)
@@ -66,4 +75,4 @@ def main(desktop: Path) -> None:
 
 
 if __name__ == "__main__":
-    main(Path(sys.argv[1]))
+    main(Path(sys.argv[1]), interface_only="--interface-only" in sys.argv)

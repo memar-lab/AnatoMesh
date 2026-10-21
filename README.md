@@ -118,6 +118,26 @@ python tests/compare_decks.py out.json <deck exported from the browser>         
 python tests/numeric_probe.py                                                    # hashes of NumPy / SciPy primitives, to diff native vs Pyodide
 ```
 
+## AnatoReg (image registration)
+
+AnatoReg is our own image-registration code, written in NumPy and SciPy so that it runs in the browser through Pyodide. In this edition it replaces ANTs. It is an independent implementation, not ANTs code.
+
+What it does now:
+- rigid and affine registration, driven by a Mattes mutual-information metric;
+- SyN deformable registration;
+- reading and writing transforms, and applying them to images (`apply_transforms`).
+
+What it does not do yet: N4 bias-field correction.
+
+This release ships an early version. A newer AnatoReg, with more accurate SyN and N4, is in progress. The package is named `anatoreg` (import name `anatoreg`).
+
+Samples (in `samples/`, see `samples/README.md`):
+- `test_t1.nii.gz`: ICBM 2009 nonlinear symmetric T1 template, 1 mm.
+- `test_t1_seg.nii.gz`: tissue labels built from the template's probability maps (gray matter, white matter, CSF).
+- `fsaverage_aparc_aseg.nii.gz`: cropped FreeSurfer fsaverage aparc+aseg (FreeSurfer licence).
+
+The ICBM 2009 licence text is not yet pasted into this repository. Paste it from the BIC ICBM152 download page before redistributing outside the lab.
+
 ## Limits to know
 
 * A browser tab can use about 2 GB. A whole head at 3 mm is about 160,000 elements (tested); the page refuses jobs predicted above 400,000 elements, which is an estimate from two measurements, not a tested limit.
